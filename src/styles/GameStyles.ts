@@ -12,6 +12,16 @@ const colors = {
   overlay: 'rgba(156, 39, 176, 0.95)', // Purple overlay
 };
 
+export const GameGrid = styled.div<{ columns: number }>`
+  display: grid;
+  grid-template-columns: repeat(${props => props.columns}, 1fr);
+  gap: 15px;
+  margin: 20px auto;
+  max-width: 600px;
+  padding: 20px;
+  width: 100%;
+`;
+
 export const GameContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
@@ -21,6 +31,17 @@ export const GameContainer = styled.div`
   min-height: 100vh;
   border-radius: 20px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+
+  > * {
+    flex-shrink: 0;
+  }
+
+  ${GameGrid} {
+    flex-shrink: 1;
+    min-height: 0;
+  }
 `;
 
 export const GameHeader = styled.div`
@@ -43,19 +64,81 @@ export const GameHeader = styled.div`
   }
 `;
 
-export const GameGrid = styled.div<{ columns: number }>`
-  display: grid;
-  grid-template-columns: repeat(${props => props.columns}, 1fr);
-  gap: 15px;
+export const Button = styled.button<{ $disabled?: boolean; $selected?: boolean }>`
+  background: ${props => {
+    if (props.$disabled) return '#ccc';
+    if (props.$selected) return '#7B1FA2'; // Darker purple for selected state
+    return '#9C27B0'; // Default purple
+  }};
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  cursor: ${props => props.$disabled ? 'not-allowed' : 'pointer'};
+  font-size: 1rem;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  opacity: ${props => props.$disabled ? 0.7 : 1};
+  transform: ${props => props.$selected ? 'scale(1.1)' : 'none'};
+  box-shadow: ${props => props.$selected ? '0 4px 15px rgba(123, 31, 162, 0.4)' : 'none'};
+  border: ${props => props.$selected ? '2px solid #E1BEE7' : 'none'};
+  position: relative;
+
+  &:after {
+    content: ${props => props.$selected ? '"✓"' : '""'};
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #4CAF50;
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    opacity: ${props => props.$selected ? 1 : 0};
+    transform: ${props => props.$selected ? 'scale(1)' : 'scale(0)'};
+    transition: all 0.3s ease;
+  }
+
+  &:hover {
+    background: ${props => {
+      if (props.$disabled) return '#ccc';
+      if (props.$selected) return '#7B1FA2';
+      return '#8E24AA';
+    }};
+    transform: ${props => {
+      if (props.$disabled) return 'none';
+      if (props.$selected) return 'scale(1.1)';
+      return 'translateY(-2px)';
+    }};
+  }
+`;
+
+export const StartButton = styled(Button)`
+  max-width: 300px;
   margin: 20px auto;
-  max-width: 800px;
-  padding: 20px;
+  padding: 15px 40px;
+  font-size: 1.2rem;
+  background: #4CAF50;
+  
+  &:hover {
+    background: #45a049;
+  }
 `;
 
 export const Card = styled.div<{ $isFlipped: boolean; $isMatched: boolean }>`
   aspect-ratio: 1;
   perspective: 1000px;
-  cursor: pointer;
+  cursor: ${props => props.$isFlipped || props.$isMatched ? 'default' : 'pointer'};
+  opacity: ${props => {
+    if (props.$isMatched) return 0.8;
+    return 1;
+  }};
+  width: 100%;
+  height: 100%;
   
   & > div {
     position: relative;
@@ -124,77 +207,32 @@ export const Card = styled.div<{ $isFlipped: boolean; $isMatched: boolean }>`
   }
 `;
 
-export const Button = styled.button<{ $disabled?: boolean; $selected?: boolean }>`
-  background: ${props => {
-    if (props.$disabled) return '#ccc';
-    if (props.$selected) return '#7B1FA2'; // Darker purple for selected state
-    return '#9C27B0'; // Default purple
-  }};
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 25px;
-  cursor: ${props => props.$disabled ? 'not-allowed' : 'pointer'};
-  font-size: 1rem;
-  font-weight: bold;
-  transition: all 0.3s ease;
-  opacity: ${props => props.$disabled ? 0.7 : 1};
-  transform: ${props => props.$selected ? 'scale(1.1)' : 'none'};
-  box-shadow: ${props => props.$selected ? '0 4px 15px rgba(123, 31, 162, 0.4)' : 'none'};
-  border: ${props => props.$selected ? '2px solid #E1BEE7' : 'none'};
-  position: relative;
-
-  &:after {
-    content: ${props => props.$selected ? '"✓"' : '""'};
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    background: #4CAF50;
-    color: white;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    opacity: ${props => props.$selected ? 1 : 0};
-    transform: ${props => props.$selected ? 'scale(1)' : 'scale(0)'};
-    transition: all 0.3s ease;
-  }
-
-  &:hover {
-    background: ${props => {
-      if (props.$disabled) return '#ccc';
-      if (props.$selected) return '#7B1FA2';
-      return '#8E24AA';
-    }};
-    transform: ${props => {
-      if (props.$disabled) return 'none';
-      if (props.$selected) return 'scale(1.1)';
-      return 'translateY(-2px)';
-    }};
-  }
-`;
-
 export const StatsContainer = styled.div`
   display: flex;
-  justify-content: space-around;
-  margin: 0 auto;
-  padding: 20px;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 0 auto 20px;
+  padding: 15px 25px;
   background: ${colors.cardFront};
   border-radius: 15px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  max-width: 800px;
-  position: sticky;
-  top: 20px;
+  max-width: 1000px;
+  position: relative;
   z-index: 100;
 `;
 
 export const StatItem = styled.div`
   color: ${colors.text};
-  font-size: 1.1rem;
-  font-weight: bold;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  strong {
+    color: ${colors.primary};
+    margin-left: 3px;
+  }
 `;
 
 export const ThemeSelector = styled.div`
@@ -206,7 +244,7 @@ export const ThemeSelector = styled.div`
   background: ${colors.cardFront};
   border-radius: 15px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  max-width: 800px;
+  max-width: 1000px;
 `;
 
 export const CelebrationOverlay = styled.div`

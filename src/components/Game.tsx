@@ -4,6 +4,8 @@ import useSound from 'use-sound';
 import { GameState, Theme, Difficulty, Card as CardType, HighScore, LEVEL_CONFIGS, THEME_ITEMS } from '../types';
 import { generateCards, calculateScore, checkMatch, isLevelComplete, getNextDifficulty } from '../utils/gameUtils';
 import { formatTime } from '../utils/timeUtils';
+import { Achievement, ACHIEVEMENTS } from '../types/achievements';
+import Achievements from './Achievements';
 import {
   GameContainer,
   GameGrid,
@@ -14,6 +16,7 @@ import {
   ThemeSelector,
   CelebrationOverlay,
   CelebrationContent,
+  StartButton
 } from '../styles/GameStyles';
 import HighScores from './HighScores';
 import Login from './Login';
@@ -35,6 +38,7 @@ const INITIAL_STATE: GameState = {
   totalTime: 0,
   hasStarted: false,
   playerName: '',
+  hasAnyMistakes: false  // Track if any mistakes were made in the current level
 };
 
 const HeaderContainer = styled.div`
@@ -82,6 +86,10 @@ const Game: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(INITIAL_STATE);
   const [highScores, setHighScores] = useState<HighScore[]>([]);
   const [showHighScores, setShowHighScores] = useState(false);
+  const [showAchievements, setShowAchievements] = useState(false);
+  const [achievements, setAchievements] = useState<Achievement[]>(ACHIEVEMENTS);
+  const [currentStreak, setCurrentStreak] = useState(0);
+  const [completedThemes, setCompletedThemes] = useState<Set<Theme>>(new Set());
   const [playFlip] = useSound('/sounds/flip.mp3', { 
     volume: 0.5,
     soundEnabled: !gameState.isMuted 
@@ -119,6 +127,19 @@ const Game: React.FC = () => {
     };
     preloadSounds();
   }, []);
+
+  // Load achievements from localStorage
+  useEffect(() => {
+    const savedAchievements = localStorage.getItem('memoryMatchAchievements');
+    if (savedAchievements) {
+      setAchievements(JSON.parse(savedAchievements));
+    }
+  }, []);
+
+  // Save achievements to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('memoryMatchAchievements', JSON.stringify(achievements));
+  }, [achievements]);
 
   const saveHighScore = useCallback((score: number, maxLevel: number, timeRemaining: number) => {
     const newScore: HighScore = {
@@ -316,7 +337,61 @@ const Game: React.FC = () => {
     }
   };
 
+  const updateAchievement = useCallback((id: string, progress: number, isComplete: boolean = false) => {
+    setAchievements(prev => prev.map(achievement => {
+      if (achievement.id === id) {
+        const newProgress = isComplete ? achievement.requirement.value : progress;
+        const isNewlyUnlocked = !achievement.isUnlocked && newProgress >= achievement.requirement.value;
+        
+        if (isNewlyUnlocked) {
+          // Show achievement notification
+          // TODO: Add achievement notification component
+          console.log(`Achievement Unlocked: ${achievement.name}!`);
+        }
+
+        return {
+          ...achievement,
+          progress: newProgress,
+          isUnlocked: achievement.isUnlocked || newProgress >= achievement.requirement.value
+        };
+      }
+      return achievement;
+    }));
+  }, []);
+
+  // Check for achievements after successful matches
+  const checkAchievements = useCallback(() => {
+    // Perfect Memory achievement
+    if (!gameState.hasAnyMistakes) {
+      updateAchievement('perfect_memory', 1, true);
+    }
+
+    // Speed Demon achievement
+    if (gameState.elapsedTime <= 30) {
+      updateAchievement('speed_demon', 1, true);
+    }
+
+    // Match Master achievement
+    updateAchievement('match_master', currentStreak);
+
+    // Theme Explorer achievement
+    if (gameState.isGameComplete) {
+      const newCompletedThemes = new Set(completedThemes).add(gameState.theme);
+      setCompletedThemes(newCompletedThemes);
+      updateAchievement('theme_explorer', newCompletedThemes.size);
+    }
+
+    // High Scorer achievement
+    updateAchievement('high_scorer', gameState.cumulativeScore);
+  }, [gameState, currentStreak, completedThemes, updateAchievement]);
+
+  // Update handleCardClick to track streaks and mistakes
   const handleCardClick = (clickedCard: CardType) => {
+    // Prevent clicking if game hasn't started
+    if (!gameState.hasStarted) {
+      return;
+    }
+
     if (
       clickedCard.isFlipped ||
       clickedCard.isMatched ||
@@ -354,6 +429,8 @@ const Game: React.FC = () => {
             playMatch();
           }
           
+          setCurrentStreak(prev => prev + 1);
+          
           const updatedCards = gameState.cards.map(card =>
             card.id === firstId || card.id === secondId
               ? { ...card, isMatched: true, isFlipped: true }
@@ -364,8 +441,11 @@ const Game: React.FC = () => {
             ...prev,
             cards: updatedCards,
             flippedCards: [],
-            score: prev.score + 1
+            score: prev.score + 1,
+            hasAnyMistakes: prev.hasAnyMistakes
           }));
+
+          checkAchievements();
 
           // Check if all cards are matched
           if (updatedCards.every(card => card.isMatched)) {
@@ -376,6 +456,8 @@ const Game: React.FC = () => {
             playNoMatch();
           }
           
+          setCurrentStreak(0);
+          
           const updatedCards = gameState.cards.map(card =>
             card.id === firstId || card.id === secondId
               ? { ...card, isFlipped: false }
@@ -385,7 +467,8 @@ const Game: React.FC = () => {
           setGameState(prev => ({
             ...prev,
             cards: updatedCards,
-            flippedCards: []
+            flippedCards: [],
+            hasAnyMistakes: true
           }));
         }
       }, 1000);
@@ -403,6 +486,9 @@ const Game: React.FC = () => {
             <PlayerInfo>
               <PlayerName>Player: {gameState.playerName}</PlayerName>
               <Controls>
+                <Button onClick={() => setShowAchievements(true)}>
+                  🏆 Achievements
+                </Button>
                 <Button onClick={toggleHighScores}>
                   {showHighScores ? 'Back to Game' : 'Show High Scores'}
                 </Button>
@@ -412,15 +498,16 @@ const Game: React.FC = () => {
                 <Button onClick={restartGame}>
                   Restart Game
                 </Button>
-                <Button 
-                  onClick={() => setGameState(INITIAL_STATE)} 
-                  style={{ background: '#666' }}
-                >
-                  Switch Player
-                </Button>
               </Controls>
             </PlayerInfo>
           </HeaderContainer>
+
+          {showAchievements && (
+            <Achievements 
+              achievements={achievements}
+              onClose={() => setShowAchievements(false)}
+            />
+          )}
 
           {showHighScores ? (
             <HighScores scores={highScores} onBack={() => setShowHighScores(false)} />
@@ -438,18 +525,9 @@ const Game: React.FC = () => {
               </StatsContainer>
 
               {!gameState.hasStarted && !gameState.isGameComplete && !gameState.isGameOver && (
-                <Button
-                  onClick={startGame}
-                  style={{
-                    fontSize: '1.5rem',
-                    padding: '15px 40px',
-                    margin: '20px 0',
-                    background: '#4CAF50',
-                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
-                  }}
-                >
+                <StartButton onClick={startGame}>
                   Start Game
-                </Button>
+                </StartButton>
               )}
 
               <ThemeSelector>

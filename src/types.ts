@@ -34,6 +34,7 @@ export interface GameState {
   totalTime: number;
   hasStarted: boolean;
   playerName: string;
+  hasAnyMistakes: boolean;  // Track if any mistakes were made in the current level
 }
 
 export interface LevelConfig {
