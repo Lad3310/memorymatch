@@ -78,8 +78,6 @@ const getGridColumns = (cardCount: number): number => {
   return 6;  // 6x4 grid for hard (24 cards)
 };
 
-const TIME_LIMIT = 300; // 5 minutes in seconds
-
 const Game: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(INITIAL_STATE);
   const [highScores, setHighScores] = useState<HighScore[]>([]);
@@ -122,6 +120,28 @@ const Game: React.FC = () => {
     preloadSounds();
   }, []);
 
+  const handleGameOver = () => {
+    if (!gameState.isMuted) {
+      playGameOver();
+    }
+
+    const timeBonus = Math.max(0, gameState.totalTime - gameState.elapsedTime);
+    const finalScore = calculateScore(gameState.score, timeBonus, gameState.difficulty);
+    
+    // Save the cumulative score instead of just the current level score
+    saveHighScore(
+      gameState.cumulativeScore + finalScore,  // Include both current level score and cumulative score
+      gameState.level,
+      timeBonus
+    );
+
+    setGameState(prev => ({
+      ...prev,
+      isGameOver: true,
+      cumulativeScore: prev.cumulativeScore + finalScore  // Update cumulative score
+    }));
+  };
+
   // Timer effect
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -130,13 +150,10 @@ const Game: React.FC = () => {
         setGameState(prev => {
           const newElapsedTime = prev.elapsedTime + 1;
           if (newElapsedTime >= prev.totalTime) {
-            if (!prev.isMuted) {
-              playGameOver();
-            }
+            handleGameOver();  // Call handleGameOver when time runs out
             return {
               ...prev,
               elapsedTime: prev.totalTime,
-              isGameOver: true,
             };
           }
           return {
@@ -147,7 +164,7 @@ const Game: React.FC = () => {
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [gameState.isGameComplete, gameState.isGameOver, gameState.hasStarted, gameState.isMuted, playGameOver]);
+  }, [gameState.isGameComplete, gameState.isGameOver, gameState.hasStarted, gameState.isMuted, playGameOver, handleGameOver]);
 
   const handleLogin = (playerName: string) => {
     setGameState(prev => ({
@@ -287,28 +304,6 @@ const Game: React.FC = () => {
         currentConfig.timeLimit - gameState.elapsedTime
       );
     }
-  };
-
-  const handleGameOver = () => {
-    if (!gameState.isMuted) {
-      playGameOver();
-    }
-
-    const timeBonus = Math.max(0, gameState.totalTime - gameState.elapsedTime);
-    const finalScore = calculateScore(gameState.score, timeBonus, gameState.difficulty);
-    
-    // Save the cumulative score instead of just the current level score
-    saveHighScore(
-      gameState.cumulativeScore + finalScore,  // Include both current level score and cumulative score
-      gameState.level,
-      timeBonus
-    );
-
-    setGameState(prev => ({
-      ...prev,
-      isGameOver: true,
-      cumulativeScore: prev.cumulativeScore + finalScore  // Update cumulative score
-    }));
   };
 
   const handleCardClick = (clickedCard: CardType) => {
