@@ -73,9 +73,9 @@ const Controls = styled.div`
 `;
 
 const getGridColumns = (cardCount: number): number => {
-  if (cardCount <= 12) return 4;  // 3x4 grid for easy
-  if (cardCount <= 16) return 4;  // 4x4 grid for medium
-  return 5;  // 4x5 grid for hard
+  if (cardCount <= 12) return 4;  // 3x4 grid for easy (12 cards)
+  if (cardCount <= 16) return 4;  // 4x4 grid for medium (16 cards)
+  return 6;  // 6x4 grid for hard (24 cards)
 };
 
 const Game: React.FC = () => {
@@ -159,9 +159,9 @@ const Game: React.FC = () => {
       id: Date.now().toString(),
       playerName: gameState.playerName,
       score,
-      maxLevel,
-      timeRemaining,
-      date: new Date().toISOString(),
+      maxLevel: maxLevel,
+      timeRemaining: Math.max(0, timeRemaining),
+      date: new Date().toLocaleDateString(),
       difficulty: gameState.difficulty,
       theme: gameState.theme
     };
@@ -246,7 +246,7 @@ const Game: React.FC = () => {
 
     const timeBonus = Math.max(0, currentConfig.timeLimit - gameState.elapsedTime);
     const levelScore = calculateScore(
-      gameState.score * 2, // Convert score to matches (each score point represents a pair)
+      gameState.score * 2,
       timeBonus,
       currentConfig.difficulty
     );
@@ -262,6 +262,7 @@ const Game: React.FC = () => {
 
     if (nextConfig) {
       // Move to next level
+      const nextLevelCards = generateCards(nextConfig.pairs, gameState.theme);
       setGameState(prev => ({
         ...prev,
         level: nextLevel,
@@ -269,15 +270,12 @@ const Game: React.FC = () => {
         cumulativeScore: newCumulativeScore,
         isGameComplete: false,
         hasStarted: false,
-        cards: [],
+        cards: nextLevelCards,
         flippedCards: [],
         score: 0,
         elapsedTime: 0,
         totalTime: nextConfig.timeLimit
       }));
-
-      // Initialize the next level
-      setTimeout(restartGame, 1500);
     } else {
       // Game is complete
       setGameState(prev => ({
@@ -303,7 +301,7 @@ const Game: React.FC = () => {
     saveHighScore(
       gameState.cumulativeScore,
       gameState.level,
-      0
+      Math.max(0, gameState.totalTime - gameState.elapsedTime)
     );
 
     setGameState(prev => ({
@@ -352,7 +350,7 @@ const Game: React.FC = () => {
           
           const updatedCards = gameState.cards.map(card =>
             card.id === firstId || card.id === secondId
-              ? { ...card, isMatched: true }
+              ? { ...card, isMatched: true, isFlipped: true }
               : card
           );
 
@@ -365,7 +363,7 @@ const Game: React.FC = () => {
 
           // Check if all cards are matched
           if (updatedCards.every(card => card.isMatched)) {
-            handleGameComplete();
+            setTimeout(() => handleGameComplete(), 500);
           }
         } else {
           if (!gameState.isMuted) {

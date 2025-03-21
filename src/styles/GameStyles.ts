@@ -180,12 +180,15 @@ export const Button = styled.button<{ $disabled?: boolean; $selected?: boolean }
 export const StatsContainer = styled.div`
   display: flex;
   justify-content: space-around;
-  margin: 20px auto;
+  margin: 0 auto;
   padding: 20px;
   background: ${colors.cardFront};
   border-radius: 15px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   max-width: 800px;
+  position: sticky;
+  top: 20px;
+  z-index: 100;
 `;
 
 export const StatItem = styled.div`

@@ -43,9 +43,18 @@ export interface LevelConfig {
 }
 
 export const THEME_ITEMS: Record<Theme, string[]> = {
-  animals: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸'],
-  vehicles: ['🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚐', '🛻', '🚚', '🚛', '🚜'],
-  food: ['🍕', '🍔', '🌮', '🍣', '🍜', '🍩', '🍦', '🍰', '🥐', '🍪', '☕️', '🧃', '🍺', '🥤'],
+  animals: [
+    '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', 
+    '🐷', '🐸', '🦒', '🦘', '🦬', '🦃'
+  ],
+  vehicles: [
+    '🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚐', '🛻', '🚚',
+    '🚛', '🚜', '✈️', '🚁', '🚂', '🚢'
+  ],
+  food: [
+    '🍕', '🍔', '🌮', '🍣', '🍜', '🍩', '🍦', '🍰', '🥐', '🍪', '☕️', '🧃',
+    '🍺', '🥤', '🥨', '🥖', '🥩', '🍗'
+  ],
   big10: [
     'Ohio State (Scarlet & Gray)\nO:ohio-state OSU',
     'Michigan (Maize & Blue)\n🐺 UM',
@@ -61,6 +70,10 @@ export const THEME_ITEMS: Record<Theme, string[]> = {
     'Nebraska (Scarlet & Cream)\n🌾 UN',
     'Maryland (Red, White, Black & Gold)\n🐢 UM',
     'Rutgers (Scarlet)\n⚔️ RU',
+    'Oregon (Green & Yellow)\n🦆 UO',
+    'USC (Cardinal & Gold)\n⚔️ USC',
+    'UCLA (Blue & Gold)\n🐻 UCLA',
+    'Washington (Purple & Gold)\n🐺 UW'
   ]
 };
 
@@ -77,7 +90,7 @@ export const LEVEL_CONFIGS: Record<number, LevelConfig> = {
   },
   3: {
     timeLimit: 120,
-    pairs: 10,
+    pairs: 12,
     difficulty: 'hard'
   }
 }; 
