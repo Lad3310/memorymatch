@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import useSound from 'use-sound';
-import { GameState, Difficulty, Theme, Card as CardType, HighScore, THEME_ITEMS, LEVEL_CONFIGS } from '../types';
-import { generateCards, checkMatch, calculateScore, isLevelComplete, getNextDifficulty } from '../utils/gameUtils';
+import { GameState, Theme, Card as CardType, HighScore, LEVEL_CONFIGS } from '../types';
+import { generateCards, calculateScore } from '../utils/gameUtils';
 import { formatTime } from '../utils/timeUtils';
 import {
   GameContainer,
@@ -34,8 +34,6 @@ const INITIAL_STATE: GameState = {
   hasStarted: false,
   playerName: '',
 };
-
-const TIME_LIMIT = 60; // 60 seconds time limit
 
 const HeaderContainer = styled.div`
   display: flex;
@@ -174,10 +172,7 @@ const Game: React.FC = () => {
   };
 
   const handleThemeChange = (theme: Theme) => {
-    const config = LEVEL_CONFIGS[gameState.level];
-    if (!config) return;
-
-    const newCards = generateCards(config.pairs, theme);
+    const newCards = generateCards(LEVEL_CONFIGS[gameState.level].pairs, theme);
     setGameState(prev => ({
       ...prev,
       theme,
@@ -199,10 +194,7 @@ const Game: React.FC = () => {
   };
 
   const startGame = () => {
-    const config = LEVEL_CONFIGS[gameState.level];
-    if (!config) return;
-
-    const newCards = generateCards(config.pairs, gameState.theme);
+    const newCards = generateCards(LEVEL_CONFIGS[gameState.level].pairs, gameState.theme);
     
     setGameState(prev => ({
       ...prev,
@@ -213,7 +205,7 @@ const Game: React.FC = () => {
       elapsedTime: 0,
       isGameComplete: false,
       isGameOver: false,
-      totalTime: config.timeLimit
+      totalTime: LEVEL_CONFIGS[gameState.level].timeLimit
     }));
   };
 
