@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React, { useState, useEffect, useCallback } from 'react';
 import useSound from 'use-sound';
-import { GameState, Theme, Card as CardType, HighScore, LEVEL_CONFIGS } from '../types';
-import { generateCards, calculateScore } from '../utils/gameUtils';
+import { GameState, Theme, Difficulty, Card as CardType, HighScore, LEVEL_CONFIGS, THEME_ITEMS } from '../types';
+import { generateCards, calculateScore, checkMatch, isLevelComplete, getNextDifficulty } from '../utils/gameUtils';
 import { formatTime } from '../utils/timeUtils';
 import {
   GameContainer,
@@ -17,6 +18,7 @@ import {
 import HighScores from './HighScores';
 import Login from './Login';
 import styled from 'styled-components';
+/* eslint-enable @typescript-eslint/no-unused-vars */
 
 const INITIAL_STATE: GameState = {
   level: 1,
@@ -75,6 +77,8 @@ const getGridColumns = (cardCount: number): number => {
   if (cardCount <= 16) return 4;  // 4x4 grid for medium (16 cards)
   return 6;  // 6x4 grid for hard (24 cards)
 };
+
+const TIME_LIMIT = 300; // 5 minutes in seconds
 
 const Game: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(INITIAL_STATE);
@@ -290,15 +294,20 @@ const Game: React.FC = () => {
       playGameOver();
     }
 
+    const timeBonus = Math.max(0, gameState.totalTime - gameState.elapsedTime);
+    const finalScore = calculateScore(gameState.score, timeBonus, gameState.difficulty);
+    
+    // Save the cumulative score instead of just the current level score
     saveHighScore(
-      gameState.cumulativeScore,
+      gameState.cumulativeScore + finalScore,  // Include both current level score and cumulative score
       gameState.level,
-      Math.max(0, gameState.totalTime - gameState.elapsedTime)
+      timeBonus
     );
 
     setGameState(prev => ({
       ...prev,
-      isGameOver: true
+      isGameOver: true,
+      cumulativeScore: prev.cumulativeScore + finalScore  // Update cumulative score
     }));
   };
 

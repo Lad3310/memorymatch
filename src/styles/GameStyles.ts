@@ -75,7 +75,7 @@ export const Card = styled.div<{ $isFlipped: boolean; $isMatched: boolean }>`
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2rem;
+    font-size: clamp(0.8rem, 1.5vw, 2rem);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     background: ${props => props.$isMatched ? '#4CAF50' : colors.cardBack};
     color: white;
@@ -88,18 +88,18 @@ export const Card = styled.div<{ $isFlipped: boolean; $isMatched: boolean }>`
       background: white;
       transform: rotateY(180deg);
       color: ${colors.text};
-      padding: 10px;
+      padding: 8px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
-      font-size: 1.2rem;
+      font-size: clamp(0.7rem, 1.2vw, 1.2rem);
 
       em {
         font-style: normal;
-        font-size: 2.5rem;
-        margin: 5px 0;
+        font-size: clamp(1.2rem, 2vw, 2.5rem);
+        margin: 2px 0;
 
         &.ohio-state-o {
           color: #BB0000;
@@ -107,13 +107,13 @@ export const Card = styled.div<{ $isFlipped: boolean; $isMatched: boolean }>`
         }
 
         &.emoji {
-          font-size: 3rem;
+          font-size: clamp(1.5rem, 2.5vw, 3rem);
         }
       }
 
       strong {
-        font-size: 1.4rem;
-        margin-top: 5px;
+        font-size: clamp(0.8rem, 1.4vw, 1.4rem);
+        margin-top: 2px;
       }
     }
   }
