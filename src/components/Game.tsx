@@ -120,7 +120,26 @@ const Game: React.FC = () => {
     preloadSounds();
   }, []);
 
-  const handleGameOver = () => {
+  const saveHighScore = useCallback((score: number, maxLevel: number, timeRemaining: number) => {
+    const newScore: HighScore = {
+      id: Date.now().toString(),
+      playerName: gameState.playerName,
+      score,
+      maxLevel: maxLevel,
+      timeRemaining: Math.max(0, timeRemaining),
+      date: new Date().toLocaleDateString(),
+      difficulty: gameState.difficulty,
+      theme: gameState.theme
+    };
+
+    const newScores = [...highScores, newScore]
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10);
+    setHighScores(newScores);
+    localStorage.setItem('memoryMatchHighScores', JSON.stringify(newScores));
+  }, [gameState.playerName, gameState.difficulty, gameState.theme, highScores]);
+
+  const handleGameOver = useCallback(() => {
     if (!gameState.isMuted) {
       playGameOver();
     }
@@ -140,7 +159,17 @@ const Game: React.FC = () => {
       isGameOver: true,
       cumulativeScore: prev.cumulativeScore + finalScore  // Update cumulative score
     }));
-  };
+  }, [
+    gameState.isMuted,
+    gameState.totalTime,
+    gameState.elapsedTime,
+    gameState.score,
+    gameState.difficulty,
+    gameState.cumulativeScore,
+    gameState.level,
+    playGameOver,
+    saveHighScore
+  ]);
 
   // Timer effect
   useEffect(() => {
@@ -171,25 +200,6 @@ const Game: React.FC = () => {
       ...prev,
       playerName
     }));
-  };
-
-  const saveHighScore = (score: number, maxLevel: number, timeRemaining: number) => {
-    const newScore: HighScore = {
-      id: Date.now().toString(),
-      playerName: gameState.playerName,
-      score,
-      maxLevel: maxLevel,
-      timeRemaining: Math.max(0, timeRemaining),
-      date: new Date().toLocaleDateString(),
-      difficulty: gameState.difficulty,
-      theme: gameState.theme
-    };
-
-    const newScores = [...highScores, newScore]
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 10);
-    setHighScores(newScores);
-    localStorage.setItem('memoryMatchHighScores', JSON.stringify(newScores));
   };
 
   const handleThemeChange = (theme: Theme) => {
