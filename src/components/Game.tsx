@@ -6,22 +6,32 @@ import { generateCards, calculateScore, checkMatch, isLevelComplete, getNextDiff
 import { formatTime } from '../utils/timeUtils';
 import { Achievement, ACHIEVEMENTS } from '../types/achievements';
 import Achievements from './Achievements';
+import LevelSelector from './LevelSelector';
 import {
-  GameContainer,
-  GameGrid,
-  Card as StyledCard,
   Button,
-  StatsContainer,
-  StatItem,
-  ThemeSelector,
+  StatsContainer as BaseStatsContainer,
+  StatItem as BaseStatItem,
+  ThemeSelector as BaseThemeSelector,
   CelebrationOverlay,
   CelebrationContent,
-  StartButton
+  StartButton as BaseStartButton
 } from '../styles/GameStyles';
 import HighScores from './HighScores';
 import Login from './Login';
 import styled from 'styled-components';
 /* eslint-enable @typescript-eslint/no-unused-vars */
+
+// Modern color palette
+const colors = {
+  primary: '#9C27B0', // Rich purple
+  secondary: '#BA68C8', // Medium purple
+  accent: '#7B1FA2', // Deep purple
+  background: '#F3E5F5', // Light purple background
+  text: '#4A4A4A', // Soft black
+  cardBack: 'linear-gradient(135deg, #9C27B0, #7B1FA2)',
+  cardFront: '#FFFFFF',
+  overlay: 'rgba(156, 39, 176, 0.95)', // Purple overlay
+};
 
 const INITIAL_STATE: GameState = {
   level: 1,
@@ -45,8 +55,17 @@ const HeaderContainer = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
+  padding: 5px 10px;
   width: 100%;
+  flex-wrap: wrap;
+  gap: 10px;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    text-align: center;
+    padding: 5px;
+  }
 `;
 
 const GameTitle = styled.h1`
@@ -74,13 +93,196 @@ const Controls = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
 `;
 
 const getGridColumns = (cardCount: number): number => {
   if (cardCount <= 12) return 4;  // 3x4 grid for easy (12 cards)
-  if (cardCount <= 16) return 4;  // 4x4 grid for medium (16 cards)
-  return 6;  // 6x4 grid for hard (24 cards)
+  return 6;  // 6x4 grid for medium (24 cards) and 6x6 grid for hard (36 cards)
 };
+
+const getGridSize = (cardCount: number): string => {
+  if (cardCount <= 12) return '450px';  // 4 columns
+  if (cardCount <= 24) return '600px';  // 6x4 grid
+  return '600px';  // 6x6 grid
+};
+
+const GameGrid = styled.div<{ columns: number; cardCount: number }>`
+  display: grid;
+  grid-template-columns: repeat(${props => props.columns}, 1fr);
+  gap: 12px;
+  width: min(95vw, ${props => getGridSize(props.cardCount)});
+  margin: 0 auto;
+  padding: 0;
+  justify-content: center;
+  align-items: center;
+  align-self: center;
+`;
+
+const StyledCard = styled.div<{ $isFlipped: boolean; $isMatched: boolean; theme?: string }>`
+  aspect-ratio: 1;
+  width: 100%;
+  max-width: ${props => props.theme === 'big10' ? '90px' : '100px'};
+  margin: 0;
+  perspective: 1000px;
+  cursor: pointer;
+  
+  > div {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.6s;
+    transform: ${props => props.$isFlipped ? 'rotateY(180deg)' : 'rotateY(0)'};
+    
+    > div:first-child {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      background: ${props => props.$isMatched ? '#4CAF50' : 'linear-gradient(135deg, #9C27B0, #7B1FA2)'};
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2em;
+      color: white;
+    }
+    
+    > div:last-child {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      background: white;
+      border-radius: 8px;
+      transform: rotateY(180deg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9em;
+      line-height: 1.2;
+      padding: 6px;
+      text-align: center;
+      border: 2px solid #9C27B0;
+      overflow: hidden;
+
+      em {
+        font-style: normal;
+        font-size: 1.5em;
+        margin: 2px 0;
+
+        &.ohio-state-o {
+          color: #BB0000; // Ohio State red
+          font-weight: bold;
+        }
+      }
+
+      strong {
+        font-size: 1em;
+        margin-top: 2px;
+      }
+
+      &.big10-card {
+        font-size: 0.8em;
+        padding: 4px;
+      }
+    }
+  }
+`;
+
+const GameContainer = styled.div`
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px;
+  text-align: center;
+  background-color: ${colors.background};
+  min-height: 100vh;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+
+const ContentWrapper = styled.div<{ cardCount: number }>`
+  width: min(95vw, 800px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 0 20px;
+  flex: 1;
+`;
+
+const StatsContainer = styled(BaseStatsContainer)`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin: 0;
+  flex-wrap: wrap;
+  padding: 16px 24px;
+  flex-shrink: 0;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  font-size: 1.1rem;
+`;
+
+const ThemeSelector = styled(BaseThemeSelector)`
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin: 0;
+  flex-wrap: wrap;
+  padding: 16px;
+  flex-shrink: 0;
+  width: 100%;
+
+  ${Button} {
+    font-size: 1.1rem;
+    padding: 10px 24px;
+    min-width: 120px;
+  }
+`;
+
+const StartButton = styled.button`
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 12px 36px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin: 10px 0;
+
+  &:hover {
+    background: #45a049;
+  }
+`;
+
+const StatItem = styled.div`
+  background: rgba(156, 39, 176, 0.1);
+  padding: 8px 20px;
+  border-radius: 15px;
+  color: ${colors.primary};
+  font-weight: 600;
+  flex: 1;
+  min-width: 160px;
+  text-align: center;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+`;
 
 const Game: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(INITIAL_STATE);
@@ -475,6 +677,25 @@ const Game: React.FC = () => {
     }
   };
 
+  const handleLevelSelect = (level: number) => {
+    const config = LEVEL_CONFIGS[level];
+    const newCards = generateCards(config.pairs, gameState.theme);
+    
+    setGameState(prev => ({
+      ...prev,
+      level,
+      difficulty: config.difficulty,
+      cards: newCards,
+      flippedCards: [],
+      score: 0,
+      elapsedTime: 0,
+      isGameComplete: false,
+      isGameOver: false,
+      hasStarted: false,
+      totalTime: config.timeLimit
+    }));
+  };
+
   return (
     <GameContainer>
       {!gameState.playerName ? (
@@ -512,22 +733,27 @@ const Game: React.FC = () => {
           {showHighScores ? (
             <HighScores scores={highScores} onBack={() => setShowHighScores(false)} />
           ) : (
-            <>
+            <ContentWrapper cardCount={gameState.cards.length}>
               <StatsContainer>
                 <StatItem>Level: {gameState.level}</StatItem>
                 <StatItem>Time: {formatTime(gameState.totalTime - gameState.elapsedTime)}</StatItem>
                 <StatItem>Score: {gameState.cumulativeScore}</StatItem>
                 <StatItem>
-                  Matches: {gameState.cards.filter(c => c.isMatched).length / 2} of {
-                    LEVEL_CONFIGS[gameState.level]?.pairs || 0
-                  }
+                  Matches: {gameState.cards.filter(c => c.isMatched).length / 2} of {LEVEL_CONFIGS[gameState.level]?.pairs || 0}
                 </StatItem>
               </StatsContainer>
 
               {!gameState.hasStarted && !gameState.isGameComplete && !gameState.isGameOver && (
-                <StartButton onClick={startGame}>
-                  Start Game
-                </StartButton>
+                <>
+                  <LevelSelector
+                    currentLevel={gameState.level}
+                    onLevelSelect={handleLevelSelect}
+                    disabled={gameState.hasStarted}
+                  />
+                  <StartButton onClick={startGame}>
+                    Start Game
+                  </StartButton>
+                </>
               )}
 
               <ThemeSelector>
@@ -561,24 +787,31 @@ const Game: React.FC = () => {
                 </Button>
               </ThemeSelector>
 
-              <GameGrid columns={getGridColumns(gameState.cards.length)}>
+              <GameGrid 
+                columns={getGridColumns(gameState.cards.length)}
+                cardCount={gameState.cards.length}
+              >
                 {gameState.cards.map(card => (
                   <StyledCard
                     key={card.id}
                     $isFlipped={card.isFlipped}
                     $isMatched={card.isMatched}
+                    theme={gameState.theme}
                     onClick={() => handleCardClick(card)}
                   >
                     <div>
                       <div></div>
-                      <div>
+                      <div className={gameState.theme === 'big10' ? 'big10-card' : ''}>
                         {gameState.theme === 'big10' ? (
                           <>
                             {card.value.split('\n')[0].split(' (')[0]}
+                            <br />
                             {card.value.split('\n')[1].includes(':ohio-state') ? (
                               <em className="ohio-state-o">O</em>
                             ) : (
-                              <em>{card.value.split('\n')[1].split(' ')[0]}</em>
+                              <em className={card.value.split('\n')[1].split(' ')[0].toLowerCase()}>
+                                {card.value.split('\n')[1].split(' ')[0]}
+                              </em>
                             )}
                             <strong>{card.value.split('\n')[1].split(' ').slice(-1)[0]}</strong>
                           </>
@@ -601,7 +834,7 @@ const Game: React.FC = () => {
                   </CelebrationContent>
                 </CelebrationOverlay>
               )}
-            </>
+            </ContentWrapper>
           )}
         </>
       )}

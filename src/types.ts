@@ -85,13 +85,13 @@ export const LEVEL_CONFIGS: Record<number, LevelConfig> = {
     difficulty: 'easy'
   },
   2: {
-    timeLimit: 90,
-    pairs: 8,
+    timeLimit: 60,
+    pairs: 12,
     difficulty: 'medium'
   },
   3: {
-    timeLimit: 120,
-    pairs: 12,
+    timeLimit: 60,
+    pairs: 18,
     difficulty: 'hard'
   }
 }; 
